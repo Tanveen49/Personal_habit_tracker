@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <title>Habit Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Basic CSS Reset */
+        body, h1, h2, p, input, button {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        /* Main Container Styling */
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        /* Heading */
+        h2 {
+            margin-bottom: 1.5rem;
+            color: #1c1e21;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #606770;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px #e7f3ff;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Remember Me Checkbox */
+        .remember-me {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .remember-me label {
+            margin: 0 0 0 0.5rem;
+            font-weight: normal;
+        }
+
+        /* Button Styling */
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #1877f2;
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #166fe5;
+        }
+        
+        button:disabled {
+            background-color: #9cbce6;
+            cursor: not-allowed;
+        }
+
+        /* Hidden class to toggle views */
+        .hidden {
+            display: none;
+        }
+
+        /* Status Message */
+        #status {
+            margin-top: 1rem;
+            font-weight: 600;
+            min-height: 20px;
+        }
+        
+        #status.success { color: #28a745; }
+        #status.error { color: #dc3545; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="loginView">
+            <h2>Login</h2>
+            <div class="form-group">
+                <label for="username">User Name</label>
+                <input type="text" id="username" placeholder="Enter your name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <div class="remember-me">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">Remember Me</label>
+            </div>
+            <button id="loginButton">Login</button>
+        </div>
+
+        <div id="trackerView" class="hidden">
+            <h2>Log a Habit</h2>
+            <p id="welcomeMessage" style="margin-bottom: 1rem; color: #606770;"></p>
+            <div class="form-group">
+                <label for="habit">Habit</label>
+                <input type="text" id="habit" placeholder="e.g., Meditated for 10 minutes">
+            </div>
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" placeholder="e.g., Felt calm and focused."></textarea>
+            </div>
+            <button id="submitButton">Log Habit</button>
+            <p id="status"></p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store user info after login
+        let currentUserName = '';
+        let currentUserEmail = '';
+
+        // DOM Elements
+        const loginView = document.getElementById('loginView');
+        const trackerView = document.getElementById('trackerView');
+        const loginButton = document.getElementById('loginButton');
+        const submitButton = document.getElementById('submitButton');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const rememberMeCheckbox = document.getElementById('rememberMe');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const statusDiv = document.getElementById('status');
+        
+        /**
+         * Runs when the page loads. Checks localStorage for saved info.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('habitTrackerEmail');
+            const savedUsername = localStorage.getItem('habitTrackerUsername');
+            if (savedEmail && savedUsername) {
+                emailInput.value = savedEmail;
+                usernameInput.value = savedUsername;
+                rememberMeCheckbox.checked = true;
+            }
+        });
+
+        /**
+         * Handles the login process.
+         */
+        loginButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if (!username) {
+                alert('Please enter your user name.');
+                return;
+            }
+            if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+                 alert('Please enter a valid email address.');
+                return;
+            }
+
+            // Store user info in global variables
+            currentUserName = username;
+            currentUserEmail = email;
+            
+            // Handle "Remember Me"
+            if (rememberMeCheckbox.checked) {
+                localStorage.setItem('habitTrackerUsername', username);
+                localStorage.setItem('habitTrackerEmail', email);
+            } else {
+                localStorage.removeItem('habitTrackerUsername');
+                localStorage.removeItem('habitTrackerEmail');
+            }
+
+            // Switch views
+            loginView.classList.add('hidden');
+            trackerView.classList.remove('hidden');
+            welcomeMessage.textContent = Welcome, ${currentUserName}!;
+        });
+
+        /**
+         * Handles the habit submission process.
+         */
+        submitButton.addEventListener('click', () => {
+            const habit = document.getElementById('habit').value.trim();
+            const notes = document.getElementById('notes').value.trim();
+
+            if (!habit) {
+                alert('Please enter a habit.');
+                return;
+            }
+
+            // Disable button to prevent multiple submissions
+            submitButton.disabled = true;
+            submitButton.textContent = 'Logging...';
+            statusDiv.textContent = '';
+            statusDiv.className = '';
+
+            // Call the server-side Apps Script function with all user info
+            google.script.run
+                .withSuccessHandler(onSuccess)
+                .withFailureHandler(onFailure)
+                .logHabit(currentUserName, currentUserEmail, habit, notes);
+        });
+
+        /**
+         * Callback function for successful form submission.
+         * @param {string} message The success message from the server.
+         */
+        function onSuccess(message) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'success';
+            
+            // Clear the form fields
+            document.getElementById('habit').value = '';
+            document.getElementById('notes').value = '';
+
+            // Re-enable the button
+            submitButton.disabled = false;
+            submitButton.textContent = 'Log Habit';
+        }
+
+        /**
+         * Callback function for failed form submission.
+         * @param {Error} error The error object.
+         */
+        function onFailure(error) {
+            statusDiv.textContent = 'Error: ' + error.message;
+            statusDiv.className = 'error';
+
+            // Re-enable the button
+            submitButton.disabled = false;
+            submitButton.textContent = 'Log Habit';
+        }
+    </script>
+</body>
+</html>
